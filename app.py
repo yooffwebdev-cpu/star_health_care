@@ -71,33 +71,29 @@ def save_lead_to_db(name, phone, age, timestamp):
         raise e
 
 def send_email(name, phone, age):
-    """Send email in background thread — does not block the HTTP response."""
     try:
-        start_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        print(f"[{start_time}] Sending email for {name}...")
+        print("START EMAIL FUNCTION")
 
-        subject = f"New Lead: {name}"
-        body = f"NEW LEAD RECEIVED\n\nName: {name}\nPhone: {phone}\nAge: {age}\nTime: {start_time}"
-
-        server = smtplib.SMTP('smtp.gmail.com', 587, timeout=25)
-        server.ehlo()
-        server.starttls()
-        server.ehlo()
+        server = smtplib.SMTP_SSL('smtp.gmail.com', 465, timeout=25)
         server.login(SENDER_EMAIL, SENDER_PASSWORD)
+
+        print("LOGIN SUCCESS")
 
         msg = MIMEMultipart()
         msg['From'] = SENDER_EMAIL
         msg['To'] = RECIPIENT_EMAIL
-        msg['Subject'] = subject
+        msg['Subject'] = "New Lead"
+
+        body = f"Name: {name}, Phone: {phone}, Age: {age}"
         msg.attach(MIMEText(body, 'plain'))
 
         server.send_message(msg)
         server.quit()
 
-        done_time = datetime.now().strftime("%H:%M:%S")
-        print(f"[{done_time}] Email sent successfully for {name}")
+        print("EMAIL SENT SUCCESS")
+
     except Exception as e:
-        print(f"[EMAIL ERROR] Failed to send email for {name}: {e}")
+        print("EMAIL ERROR:", e)
 
 @app.route('/dashboard')
 def dashboard():
@@ -137,12 +133,25 @@ def submit_lead():
         # Save lead to DB
         save_lead_to_db(name, phone, age, arrival_time)
 
-        # Fire email in background thread so we respond INSTANTLY (avoids 502 timeout)
-        email_thread = threading.Thread(target=send_email, args=(name, phone, age), daemon=False)
-        email_thread.start()
+        # Send email directly (Synchronous)
+        # This is more reliable on Render's free tier than background threads,
+        # ensuring the email finishes before the request completes.
+        email_sent = True
+        email_error = None
+        try:
+            send_email(name, phone, age)
+        except Exception as e:
+            email_sent = False
+            email_error = str(e)
+            print(f"[EMAIL ERROR] {e}")
 
-        print(f"Lead saved. Email sending in background for {name}.")
-        return jsonify({"status": "success", "message": "Lead submitted successfully"})
+        print(f"Lead saved. Email sent: {email_sent} for {name}.")
+        return jsonify({
+            "status": "success", 
+            "message": "Lead submitted successfully",
+            "email_sent": email_sent,
+            "email_error": email_error
+        })
 
     except Exception as e:
         print(f"Critical Error: {e}")
