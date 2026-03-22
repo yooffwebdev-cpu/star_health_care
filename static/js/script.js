@@ -72,9 +72,9 @@ document.addEventListener('DOMContentLoaded', function () {
             })
             .then(data => {
                 if (data.status === 'success') {
-                    // If there's an error message inside success (like email failed), alert it but still show plans
-                    if (data.message.includes('failed')) {
-                        alert('Note: ' + data.message);
+                    // Show alert if email failed to send
+                    if (data.email_sent === false) {
+                        alert('Lead saved! But email notification failed: ' + (data.email_error || 'Unknown error'));
                     }
 
                     // Success - Show Plans

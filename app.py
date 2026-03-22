@@ -60,39 +60,29 @@ def save_lead_to_db(name, phone, age, timestamp):
         raise e
 
 def send_email(name, phone, age):
-    try:
-        start_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        print(f"[{start_time}] Attempting to send email for {name}...")
-        
-        subject = f"New Lead: {name}"
-        body = f"NEW LEAD RECEIVED\n\nName: {name}\nPhone: {phone}\nAge: {age}\nTime: {start_time}"
-        
-        # Using Port 587 with STARTTLS which is often more reliable
-        server = smtplib.SMTP('smtp.gmail.com', 587, timeout=20)
-        server.starttls()
-        server.login(SENDER_EMAIL, SENDER_PASSWORD)
-        
-        msg = MIMEMultipart()
-        msg['From'] = SENDER_EMAIL
-        msg['To'] = RECIPIENT_EMAIL
-        msg['Subject'] = subject
-        msg.attach(MIMEText(body, 'plain'))
-        
-        server.send_message(msg)
-        server.quit()
-        
-        done_time = datetime.now().strftime("%H:%M:%S")
-        print(f"[{done_time}] Email successfully sent for {name}")
-    except Exception as email_err:
-        err_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        error_msg = f"[{err_time}] Email failed for {name}: {str(email_err)}\n"
-        print(error_msg)
-        # Log to file for debugging
-        try:
-            with open('email_errors.log', 'a', encoding='utf-8') as f:
-                f.write(error_msg)
-        except:
-            pass
+    start_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    print(f"[{start_time}] Attempting to send email for {name}...")
+
+    subject = f"New Lead: {name}"
+    body = f"NEW LEAD RECEIVED\n\nName: {name}\nPhone: {phone}\nAge: {age}\nTime: {start_time}"
+
+    server = smtplib.SMTP('smtp.gmail.com', 587, timeout=30)
+    server.ehlo()
+    server.starttls()
+    server.ehlo()
+    server.login(SENDER_EMAIL, SENDER_PASSWORD)
+
+    msg = MIMEMultipart()
+    msg['From'] = SENDER_EMAIL
+    msg['To'] = RECIPIENT_EMAIL
+    msg['Subject'] = subject
+    msg.attach(MIMEText(body, 'plain'))
+
+    server.send_message(msg)
+    server.quit()
+
+    done_time = datetime.now().strftime("%H:%M:%S")
+    print(f"[{done_time}] Email successfully sent for {name}")
 
 @app.route('/dashboard')
 def dashboard():
@@ -130,19 +120,29 @@ def submit_lead():
         if not all([name, phone, age]):
             return jsonify({"status": "error", "message": "All fields are required"}), 400
 
-        # Save leads
+        # Save lead to DB first
         save_lead_to_db(name, phone, age, arrival_time)
 
-        # Send email in background to avoid blocking the user's response
-        # Using a thread here. While Render mentions background process limits, 
-        # a short SMTP task like this typically completes successfully.
-        email_thread = threading.Thread(target=send_email, args=(name, phone, age))
-        email_thread.start()
-        
-        finish_time = datetime.now().strftime("%H:%M:%S")
-        print(f"Lead saved/responded at {finish_time}. Email sending in background...")
+        # Send email SYNCHRONOUSLY — Render free tier kills background threads
+        # before SMTP can complete, so we must wait for it here
+        email_sent = True
+        email_error = None
+        try:
+            send_email(name, phone, age)
+        except Exception as e:
+            email_sent = False
+            email_error = str(e)
+            print(f"[EMAIL ERROR] {e}")
 
-        return jsonify({"status": "success", "message": "Lead submitted successfully"})
+        finish_time = datetime.now().strftime("%H:%M:%S")
+        print(f"Lead saved at {finish_time}. Email sent: {email_sent}")
+
+        return jsonify({
+            "status": "success",
+            "message": "Lead submitted successfully",
+            "email_sent": email_sent,
+            "email_error": email_error
+        })
 
     except Exception as e:
         print(f"Critical Error: {e}")
