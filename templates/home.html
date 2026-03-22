@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Star Health Insurance Application</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+
+<body>
+
+    <!-- Header -->
+    <header>
+        <div class="logo-container">
+            <img src="{{ url_for('static', filename='star.jfif') }}" alt="Star Health Insurance Logo" class="logo">
+            <h1>Star Health Insurance </h1>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-content">
+            <h1>Health Insurance</h1>
+            <p>Secure your family's future with Star Health Insurance plans.</p>
+            <ul class="features">
+                <li><i class="fas fa-check-circle"></i> Cashless Treatment in 2 Hours*</li>
+                <li><i class="fas fa-check-circle"></i> 14,000+ Network Hospitals</li>
+                <li><i class="fas fa-check-circle"></i> No Pre-policy Medical Checkup</li>
+            </ul>
+            <button id="applyNowBtn" class="cta-btn">Apply Online</button>
+        </div>
+        <div class="hero-image">
+            <img src="{{ url_for('static', filename='loan1.jpeg') }}" alt="Star Health Insurance">
+        </div>
+    </section>
+
+    <!-- Modal Form -->
+    <div id="applicationModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn">&times;</span>
+            <h2>Apply for Health Insurance</h2>
+            <p>Fill in your details to check eligible plans.</p>
+
+            <form id="loanForm">
+                <div class="form-group">
+                    <label for="name">Full Name</label>
+                    <input type="text" id="name" name="name" required placeholder="Enter your full name">
+                </div>
+
+                <div class="form-group">
+                    <label for="phone">Mobile Number</label>
+                    <div class="phone-input">
+                        <span>+91</span>
+                        <input type="tel" id="phone" name="phone" required placeholder="Enter 10 digit mobile number"
+                            pattern="[0-9]{10}">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="age">Age</label>
+                    <input type="number" id="age" name="age" required placeholder="Enter your age" min="21" max="60">
+                </div>
+
+                <button type="submit" id="viewPlanBtn" class="submit-btn">View Plan <i
+                        class="fas fa-arrow-right"></i></button>
+                <p class="privacy-note">By clicking View Plan, you agree to our Terms & Conditions.</p>
+            </form>
+        </div>
+    </div>
+
+
+    <!-- Features Section (Just for look) -->
+    <section class="features-section">
+        <div class="feature-card">
+            <i class="fas fa-bolt"></i>
+            <h3>Instant Approval</h3>
+            <p>Get instant approval on your health insurance application.</p>
+        </div>
+        <div class="feature-card">
+            <i class="fas fa-percentage"></i>
+            <h3>Comprehensive Coverage</h3>
+            <p>Robust coverage for all your medical needs and emergencies.</p>
+        </div>
+        <div class="feature-card">
+            <i class="fas fa-file-alt"></i>
+            <h3>Minimal Documentation</h3>
+            <p>Paperless process with minimal documentation required.</p>
+        </div>
+    </section>
+
+    <footer>
+        <p>&copy; 2026 Star Health and Allied Insurance Co Ltd. All rights reserved.</p>
+    </footer>
+
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+
+</html>
