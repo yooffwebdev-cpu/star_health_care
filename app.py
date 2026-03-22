@@ -75,6 +75,7 @@ def send_email(name, phone, age):
         print("START EMAIL FUNCTION")
 
         server = smtplib.SMTP_SSL('smtp.gmail.com', 465, timeout=25)
+        server.set_debuglevel(1)
         server.login(SENDER_EMAIL, SENDER_PASSWORD)
 
         print("LOGIN SUCCESS")
@@ -112,6 +113,7 @@ def dashboard():
 
 @app.route('/submit_lead', methods=['POST'])
 def submit_lead():
+    print("DEBUG: /submit_lead ROUTE HIT!")
     try:
         arrival_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         print(f"Processing lead at {arrival_time}")
@@ -133,24 +135,14 @@ def submit_lead():
         # Save lead to DB
         save_lead_to_db(name, phone, age, arrival_time)
 
-        # Send email directly (Synchronous)
-        # This is more reliable on Render's free tier than background threads,
-        # ensuring the email finishes before the request completes.
-        email_sent = True
-        email_error = None
-        try:
-            send_email(name, phone, age)
-        except Exception as e:
-            email_sent = False
-            email_error = str(e)
-            print(f"[EMAIL ERROR] {e}")
+        # Fire email in background thread so the user doesn't wait (fixes long loading)
+        email_thread = threading.Thread(target=send_email, args=(name, phone, age), daemon=False)
+        email_thread.start()
 
-        print(f"Lead saved. Email sent: {email_sent} for {name}.")
+        print(f"Lead saved. Email sending in background for {name}.")
         return jsonify({
             "status": "success", 
-            "message": "Lead submitted successfully",
-            "email_sent": email_sent,
-            "email_error": email_error
+            "message": "Lead submitted successfully"
         })
 
     except Exception as e:
